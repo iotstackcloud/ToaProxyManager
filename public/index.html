@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOA Proxy Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    h1 { color: #00d4ff; font-size: 24px; }
+    h2 { color: #00d4ff; font-size: 18px; margin-bottom: 15px; }
+    h3 { color: #00d4ff; font-size: 16px; margin-bottom: 10px; }
+
+    .header-buttons { display: flex; gap: 10px; }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #00d4ff; color: #1a1a2e; }
+    .btn-primary:hover { background: #00b8e6; }
+    .btn-success { background: #00c853; color: white; }
+    .btn-danger { background: #ff4444; color: white; }
+    .btn-warning { background: #ffab00; color: #1a1a2e; }
+    .btn-secondary { background: #444; color: #eee; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    .tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #16213e;
+      border: 1px solid #333;
+      border-radius: 5px 5px 0 0;
+      cursor: pointer;
+      color: #888;
+    }
+    .tab.active {
+      background: #00d4ff;
+      color: #1a1a2e;
+      border-color: #00d4ff;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 20px;
+    }
+    @media (max-width: 1000px) {
+      .main-content { grid-template-columns: 1fr; }
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: #16213e;
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid #333;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .card-header h3 { margin: 0; display: flex; align-items: center; gap: 8px; }
+    .card-actions { display: flex; gap: 5px; }
+    .card .ip { color: #888; font-size: 13px; margin-bottom: 12px; }
+
+    .pattern-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .pattern-row select {
+      flex: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #0f0f23;
+      color: #eee;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .action-buttons .btn { flex: 1; }
+
+    .url-box {
+      background: #0f0f23;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    .url-box label {
+      display: block;
+      color: #888;
+      margin-bottom: 5px;
+      font-family: sans-serif;
+      font-size: 12px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .status-online { background: #00c853; }
+    .status-offline { background: #ff4444; }
+    .status-unknown { background: #888; }
+
+    /* Group specific */
+    .speaker-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .speaker-tag {
+      background: #0f0f23;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: #00d4ff;
+    }
+    .speaker-count {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    /* Log Panel */
+    .log-panel {
+      background: #16213e;
+      border-radius: 10px;
+      border: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 140px);
+      position: sticky;
+      top: 20px;
+    }
+    .log-header {
+      padding: 12px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .log-header h2 { margin: 0; font-size: 16px; }
+    .log-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      background: #0f0f23;
+      min-height: 200px;
+    }
+    .log-entry {
+      padding: 4px 6px;
+      margin-bottom: 4px;
+      border-radius: 3px;
+      border-left: 3px solid #444;
+    }
+    .log-entry.REQUEST { border-left-color: #00d4ff; background: rgba(0,212,255,0.1); }
+    .log-entry.RESPONSE { border-left-color: #00c853; background: rgba(0,200,83,0.1); }
+    .log-entry.ERROR { border-left-color: #ff4444; background: rgba(255,68,68,0.1); }
+    .log-entry.INFO { border-left-color: #888; background: rgba(136,136,136,0.1); }
+    .log-timestamp { color: #666; margin-right: 8px; }
+    .log-level { font-weight: bold; margin-right: 8px; }
+    .log-level.REQUEST { color: #00d4ff; }
+    .log-level.RESPONSE { color: #00c853; }
+    .log-level.ERROR { color: #ff4444; }
+    .log-level.INFO { color: #888; }
+    .log-data {
+      margin-top: 4px;
+      padding: 6px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 3px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #aaa;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .log-toggle { cursor: pointer; color: #00d4ff; font-size: 10px; margin-left: 8px; }
+
+    .connection-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; }
+    .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff4444; }
+    .connection-dot.connected { background: #00c853; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #16213e;
+      padding: 25px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid #333;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-content h2 { margin-bottom: 20px; color: #00d4ff; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #888; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #0f0f23;
+      color: #eee;
+      font-size: 14px;
+    }
+    .checkbox-list { max-height: 200px; overflow-y: auto; }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      background: #0f0f23;
+      margin-bottom: 5px;
+      border-radius: 5px;
+    }
+    .checkbox-item input { width: auto; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions .btn { flex: 1; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 5px;
+      color: white;
+      z-index: 2000;
+      animation: slideIn 0.3s ease;
+    }
+    .toast-success { background: #00c853; }
+    .toast-error { background: #ff4444; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>TOA Proxy Manager</h1>
+      <div class="header-buttons">
+        <button class="btn btn-primary" onclick="openSpeakerModal()">+ Lautsprecher</button>
+        <button class="btn btn-success" onclick="openGroupModal()">+ Gruppe</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('speakers')">Lautsprecher</div>
+      <div class="tab" onclick="switchTab('groups')">Gruppen</div>
+    </div>
+
+    <div class="main-content">
+      <div class="content-area">
+        <!-- Speakers Tab -->
+        <div id="speakers-tab" class="tab-content active">
+          <div id="speakers-container" class="cards-grid"></div>
+          <div id="speakers-empty" class="empty-state" style="display:none;">
+            <h2>Keine Lautsprecher</h2>
+            <p>Klicken Sie auf "+ Lautsprecher" um zu beginnen.</p>
+          </div>
+        </div>
+
+        <!-- Groups Tab -->
+        <div id="groups-tab" class="tab-content">
+          <div id="groups-container" class="cards-grid"></div>
+          <div id="groups-empty" class="empty-state" style="display:none;">
+            <h2>Keine Gruppen</h2>
+            <p>Erstellen Sie eine Gruppe um mehrere Lautsprecher gleichzeitig anzusteuern.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Panel -->
+      <div class="log-panel">
+        <div class="log-header">
+          <h2>Live Log</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="connection-status">
+              <div class="connection-dot" id="connection-dot"></div>
+              <span id="connection-text">Verbinde...</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="clearLogs()">Leeren</button>
+          </div>
+        </div>
+        <div class="log-content" id="log-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Speaker Modal -->
+  <div id="speaker-modal" class="modal">
+    <div class="modal-content">
+      <h2 id="speaker-modal-title">Lautsprecher hinzufuegen</h2>
+      <input type="hidden" id="edit-speaker-id">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="speaker-name" placeholder="z.B. Eingang Hauptgebaeude">
+      </div>
+      <div class="form-group">
+        <label>IP-Adresse</label>
+        <input type="text" id="speaker-ip" placeholder="z.B. 192.168.1.100">
+      </div>
+      <div class="form-group">
+        <label>Benutzername</label>
+        <input type="text" id="speaker-username" placeholder="z.B. admin">
+      </div>
+      <div class="form-group">
+        <label>Passwort</label>
+        <input type="password" id="speaker-password" placeholder="Passwort">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModals()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveSpeaker()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group Modal -->
+  <div id="group-modal" class="modal">
+    <div class="modal-content">
+      <h2 id="group-modal-title">Gruppe erstellen</h2>
+      <input type="hidden" id="edit-group-id">
+      <div class="form-group">
+        <label>Gruppenname</label>
+        <input type="text" id="group-name" placeholder="z.B. Alle Eingaenge">
+      </div>
+      <div class="form-group">
+        <label>Lautsprecher auswaehlen</label>
+        <div id="speaker-checkboxes" class="checkbox-list"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModals()">Abbrechen</button>
+        <button class="btn btn-primary" onclick="saveGroup()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let speakers = [];
+    let groups = [];
+    let logEntries = [];
+    const baseUrl = window.location.origin;
+    const MAX_LOGS = 100;
+
+    // ==================== DATA LOADING ====================
+
+    async function loadSpeakers() {
+      try {
+        const res = await fetch('/api/speakers');
+        speakers = await res.json();
+        renderSpeakers();
+      } catch (err) {
+        showToast('Fehler beim Laden', 'error');
+      }
+    }
+
+    async function loadGroups() {
+      try {
+        const res = await fetch('/api/groups');
+        groups = await res.json();
+        renderGroups();
+      } catch (err) {
+        showToast('Fehler beim Laden', 'error');
+      }
+    }
+
+    // ==================== RENDERING ====================
+
+    function renderSpeakers() {
+      const container = document.getElementById('speakers-container');
+      const empty = document.getElementById('speakers-empty');
+
+      if (speakers.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      container.innerHTML = speakers.map(s => `
+        <div class="card">
+          <div class="card-header">
+            <h3><span class="status-indicator status-unknown" id="status-${s.id}"></span> ${s.name}</h3>
+            <div class="card-actions">
+              <button class="btn btn-secondary btn-sm" onclick="editSpeaker('${s.id}')">Bearbeiten</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSpeaker('${s.id}')">X</button>
+            </div>
+          </div>
+          <div class="ip">${s.ip} | ${s.username}</div>
+          <div class="pattern-row">
+            <select id="pattern-${s.id}">
+              ${[...Array(20)].map((_,i) => `<option value="${i+1}">Pattern ${i+1}</option>`).join('')}
+            </select>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-success" onclick="playSpeaker('${s.id}')">Play</button>
+            <button class="btn btn-danger" onclick="stopSpeaker('${s.id}')">Stop</button>
+            <button class="btn btn-warning" onclick="testSpeaker('${s.id}')">Test</button>
+          </div>
+          <div class="url-box">
+            <label>Avigilon Unity URL:</label>
+            ${baseUrl}/play/${s.id}?pattern=1
+          </div>
+        </div>
+      `).join('');
+
+      speakers.forEach(s => checkSpeakerStatus(s.id));
+    }
+
+    function renderGroups() {
+      const container = document.getElementById('groups-container');
+      const empty = document.getElementById('groups-empty');
+
+      if (groups.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      container.innerHTML = groups.map(g => `
+        <div class="card">
+          <div class="card-header">
+            <h3>${g.name}</h3>
+            <div class="card-actions">
+              <button class="btn btn-secondary btn-sm" onclick="editGroup('${g.id}')">Bearbeiten</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteGroup('${g.id}')">X</button>
+            </div>
+          </div>
+          <div class="speaker-count">${g.speakers.length} Lautsprecher</div>
+          <div class="speaker-list">
+            ${g.speakers.map(s => `<span class="speaker-tag">${s.name}</span>`).join('')}
+          </div>
+          <div class="pattern-row">
+            <select id="group-pattern-${g.id}">
+              ${[...Array(20)].map((_,i) => `<option value="${i+1}">Pattern ${i+1}</option>`).join('')}
+            </select>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-success" onclick="playGroup('${g.id}')">Play Alle</button>
+            <button class="btn btn-danger" onclick="stopGroup('${g.id}')">Stop Alle</button>
+          </div>
+          <div class="url-box">
+            <label>Avigilon Unity URL (Gruppe):</label>
+            ${baseUrl}/group/play/${g.id}?pattern=1
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ==================== SPEAKER ACTIONS ====================
+
+    async function checkSpeakerStatus(id) {
+      const el = document.getElementById(`status-${id}`);
+      try {
+        const res = await fetch(`/api/test/${id}`);
+        const data = await res.json();
+        el.className = 'status-indicator ' + (data.success ? 'status-online' : 'status-offline');
+      } catch {
+        el.className = 'status-indicator status-offline';
+      }
+    }
+
+    async function playSpeaker(id) {
+      const pattern = document.getElementById(`pattern-${id}`).value;
+      try {
+        const res = await fetch(`/play/${id}?pattern=${pattern}`);
+        const data = await res.json();
+        showToast(data.success ? `Pattern ${pattern} gestartet` : (data.error || 'Fehler'), data.success ? 'success' : 'error');
+      } catch { showToast('Verbindungsfehler', 'error'); }
+    }
+
+    async function stopSpeaker(id) {
+      try {
+        const res = await fetch(`/stop/${id}`);
+        const data = await res.json();
+        showToast(data.success ? 'Gestoppt' : 'Fehler', data.success ? 'success' : 'error');
+      } catch { showToast('Verbindungsfehler', 'error'); }
+    }
+
+    async function testSpeaker(id) {
+      try {
+        const res = await fetch(`/api/test/${id}`);
+        const data = await res.json();
+        showToast(data.success ? 'Verbindung OK' : `Fehler: ${data.message}`, data.success ? 'success' : 'error');
+        checkSpeakerStatus(id);
+      } catch { showToast('Verbindungsfehler', 'error'); }
+    }
+
+    // ==================== GROUP ACTIONS ====================
+
+    async function playGroup(id) {
+      const pattern = document.getElementById(`group-pattern-${id}`).value;
+      try {
+        const res = await fetch(`/group/play/${id}?pattern=${pattern}`);
+        const data = await res.json();
+        showToast(`${data.success}/${data.total} erfolgreich`, data.failed === 0 ? 'success' : 'error');
+      } catch { showToast('Verbindungsfehler', 'error'); }
+    }
+
+    async function stopGroup(id) {
+      try {
+        const res = await fetch(`/group/stop/${id}`);
+        const data = await res.json();
+        showToast(`${data.success}/${data.total} gestoppt`, data.failed === 0 ? 'success' : 'error');
+      } catch { showToast('Verbindungsfehler', 'error'); }
+    }
+
+    // ==================== MODALS ====================
+
+    function openSpeakerModal(id = null) {
+      document.getElementById('speaker-modal-title').textContent = id ? 'Lautsprecher bearbeiten' : 'Lautsprecher hinzufuegen';
+      document.getElementById('edit-speaker-id').value = id || '';
+
+      if (id) {
+        const s = speakers.find(x => x.id === id);
+        document.getElementById('speaker-name').value = s.name;
+        document.getElementById('speaker-ip').value = s.ip;
+        document.getElementById('speaker-username').value = s.username;
+        document.getElementById('speaker-password').value = '';
+      } else {
+        document.getElementById('speaker-name').value = '';
+        document.getElementById('speaker-ip').value = '';
+        document.getElementById('speaker-username').value = '';
+        document.getElementById('speaker-password').value = '';
+      }
+
+      document.getElementById('speaker-modal').classList.add('active');
+    }
+
+    function editSpeaker(id) { openSpeakerModal(id); }
+
+    async function saveSpeaker() {
+      const id = document.getElementById('edit-speaker-id').value;
+      const data = {
+        name: document.getElementById('speaker-name').value,
+        ip: document.getElementById('speaker-ip').value,
+        username: document.getElementById('speaker-username').value,
+        password: document.getElementById('speaker-password').value
+      };
+
+      if (!data.name || !data.ip || !data.username || (!id && !data.password)) {
+        showToast('Bitte alle Felder ausfuellen', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(id ? `/api/speakers/${id}` : '/api/speakers', {
+          method: id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          showToast(id ? 'Gespeichert' : 'Hinzugefuegt', 'success');
+          closeModals();
+          loadSpeakers();
+        } else {
+          showToast('Fehler', 'error');
+        }
+      } catch { showToast('Verbindungsfehler', 'error'); }
+    }
+
+    async function deleteSpeaker(id) {
+      if (!confirm('Lautsprecher loeschen?')) return;
+      try {
+        await fetch(`/api/speakers/${id}`, { method: 'DELETE' });
+        showToast('Geloescht', 'success');
+        loadSpeakers();
+        loadGroups();
+      } catch { showToast('Fehler', 'error'); }
+    }
+
+    function openGroupModal(id = null) {
+      document.getElementById('group-modal-title').textContent = id ? 'Gruppe bearbeiten' : 'Gruppe erstellen';
+      document.getElementById('edit-group-id').value = id || '';
+
+      const group = id ? groups.find(g => g.id === id) : null;
+      document.getElementById('group-name').value = group ? group.name : '';
+
+      const checkboxes = document.getElementById('speaker-checkboxes');
+      checkboxes.innerHTML = speakers.map(s => `
+        <div class="checkbox-item">
+          <input type="checkbox" id="check-${s.id}" value="${s.id}" ${group && group.speakerIds.includes(s.id) ? 'checked' : ''}>
+          <label for="check-${s.id}">${s.name} (${s.ip})</label>
+        </div>
+      `).join('');
+
+      document.getElementById('group-modal').classList.add('active');
+    }
+
+    function editGroup(id) { openGroupModal(id); }
+
+    async function saveGroup() {
+      const id = document.getElementById('edit-group-id').value;
+      const name = document.getElementById('group-name').value;
+      const speakerIds = [...document.querySelectorAll('#speaker-checkboxes input:checked')].map(el => el.value);
+
+      if (!name) {
+        showToast('Name erforderlich', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(id ? `/api/groups/${id}` : '/api/groups', {
+          method: id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, speakerIds })
+        });
+        if (res.ok) {
+          showToast(id ? 'Gespeichert' : 'Erstellt', 'success');
+          closeModals();
+          loadGroups();
+        }
+      } catch { showToast('Fehler', 'error'); }
+    }
+
+    async function deleteGroup(id) {
+      if (!confirm('Gruppe loeschen?')) return;
+      try {
+        await fetch(`/api/groups/${id}`, { method: 'DELETE' });
+        showToast('Geloescht', 'success');
+        loadGroups();
+      } catch { showToast('Fehler', 'error'); }
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    }
+
+    // ==================== TABS ====================
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      document.querySelector(`.tab:nth-child(${tab === 'speakers' ? 1 : 2})`).classList.add('active');
+      document.getElementById(`${tab}-tab`).classList.add('active');
+    }
+
+    // ==================== LOGGING ====================
+
+    function addLogEntry(entry) {
+      logEntries.unshift(entry);
+      if (logEntries.length > MAX_LOGS) logEntries.pop();
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('log-content');
+      container.innerHTML = logEntries.map((e, i) => {
+        const hasData = e.data && Object.keys(e.data).length > 0;
+        return `
+          <div class="log-entry ${e.level}">
+            <span class="log-timestamp">${e.timestamp}</span>
+            <span class="log-level ${e.level}">${e.level}</span>
+            ${e.message}
+            ${hasData ? `<span class="log-toggle" onclick="toggleLog(${i})">[+]</span><div class="log-data" id="log-${i}" style="display:none">${JSON.stringify(e.data, null, 2)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleLog(i) {
+      const el = document.getElementById(`log-${i}`);
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function clearLogs() {
+      logEntries = [];
+      renderLogs();
+    }
+
+    function connectLogStream() {
+      const dot = document.getElementById('connection-dot');
+      const text = document.getElementById('connection-text');
+
+      const es = new EventSource('/api/logs/stream');
+      es.onopen = () => { dot.classList.add('connected'); text.textContent = 'Live'; };
+      es.onmessage = (e) => { try { addLogEntry(JSON.parse(e.data)); } catch {} };
+      es.onerror = () => {
+        dot.classList.remove('connected');
+        text.textContent = 'Reconnect...';
+        es.close();
+        setTimeout(connectLogStream, 3000);
+      };
+    }
+
+    // ==================== UTILS ====================
+
+    function showToast(msg, type) {
+      const t = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    // ==================== INIT ====================
+
+    loadSpeakers();
+    loadGroups();
+    connectLogStream();
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+  </script>
+</body>
+</html>
