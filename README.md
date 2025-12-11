@@ -28,7 +28,7 @@ Laden Sie Node.js von https://nodejs.org herunter und installieren Sie es.
 Öffnen Sie eine Eingabeaufforderung (cmd) und führen Sie aus:
 
 ```cmd
-cd "C:\Users\Dominik Nett\Toa\toa-proxy"
+cd "C:\Users\xxx\Toa\toa-proxy"
 npm install
 ```
 
@@ -125,7 +125,7 @@ Damit der Proxy automatisch mit Windows startet:
 ### Installation (als Administrator)
 
 ```cmd
-cd "C:\Users\Dominik Nett\Toa\toa-proxy"
+cd "C:\Users\xxx\Toa\toa-proxy"
 npm run install-service
 ```
 
